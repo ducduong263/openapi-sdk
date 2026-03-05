@@ -41,6 +41,7 @@ Available examples:
 - get_balances.py
 - get_deals.py
 - get_loan_packages.py
+- get_ohlc.py
 - get_order_detail.py
 - get_order_history.py
 - get_orders.py

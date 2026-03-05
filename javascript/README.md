@@ -46,6 +46,7 @@ Available examples:
 - get_balances.js
 - get_deals.js
 - get_loan_packages.js
+- get_ohlc.js
 - get_order_detail.js
 - get_order_history.js
 - get_orders.js

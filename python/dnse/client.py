@@ -118,6 +118,16 @@ class DNSEClient:
             dry_run=dry_run,
         )
 
+    def get_ohlc(self, bar_type, query=None, dry_run=False):
+        request_query = dict(query or {})
+        request_query["type"] = bar_type
+        return self._request(
+            "GET",
+            "/price/ohlc",
+            query=request_query,
+            dry_run=dry_run,
+        )
+
     def post_order(self, market_type, payload, trading_token, order_category="NORMAL", dry_run=False):
         headers = {"trading-token": trading_token}
         query = {"marketType": market_type}
@@ -188,6 +198,18 @@ class DNSEClient:
         return self._request(
             "POST",
             "/registration/send-email-otp",
+            dry_run=dry_run,
+        )
+
+    def close_deal(self, deal_id, account_no, market_type, payload, trading_token, dry_run=False):
+        headers = {"trading-token": trading_token}
+        query = {"marketType": market_type}
+        return self._request(
+            "POST",
+            f"/accounts/{account_no}/deals/{deal_id}/close",
+            query=query,
+            body=payload,
+            headers=headers,
             dry_run=dry_run,
         )
 

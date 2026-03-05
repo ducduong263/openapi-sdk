@@ -28,6 +28,15 @@ class DNSEClient {
     return this.#request('GET', `/accounts/${accountNo}/loan-packages`, { query, dryRun });
   }
 
+  closeDeal(accountNo, dealId, marketType, payload, tradingToken, { dryRun = false } = {}) {
+    return this.#request('POST', `/accounts/${accountNo}/deals/${dealId}/close`, {
+      query: { marketType },
+      body: payload,
+      headers: { 'trading-token': tradingToken },
+      dryRun,
+    });
+  }
+
   getDeals(accountNo, marketType, { dryRun = false } = {}) {
     return this.#request('GET', `/accounts/${accountNo}/deals`, {
       query: { marketType },
@@ -88,6 +97,13 @@ class DNSEClient {
   getSecurityDefinition(symbol, { boardId, dryRun = false } = {}) {
     return this.#request('GET', `/price/secdef/${symbol}`, {
       query: { boardId },
+      dryRun,
+    });
+  }
+
+  getOhlc(type, { query = {}, dryRun = false } = {}) {
+    return this.#request('GET', '/price/ohlc', {
+      query: { ...query, type },
       dryRun,
     });
   }
