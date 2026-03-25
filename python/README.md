@@ -36,10 +36,11 @@ python sdk/python/api/get_accounts.py
 Available examples:
 
 - cancel_order.py
+- close_position.py
 - create_trading_token.py
 - get_accounts.py
 - get_balances.py
-- get_deals.py
+- get_positions.py
 - get_loan_packages.py
 - get_ohlc.py
 - get_order_detail.py

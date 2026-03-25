@@ -14,7 +14,7 @@ def main():
         base_url="https://openapi.dnse.com.vn",
     )
 
-    status, body = client.get_deals(
+    status, body = client.get_positions(
         account_no="0001000115",
         market_type="DERIVATIVE",
         dry_run=False,

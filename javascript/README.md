@@ -41,10 +41,11 @@ node sdk/javascript/examples/get_accounts.js
 Available examples:
 
 - cancel_order.js
+- close_position.js
 - create_trading_token.js
 - get_accounts.js
 - get_balances.js
-- get_deals.js
+- get_positions.js
 - get_loan_packages.js
 - get_ohlc.js
 - get_order_detail.js

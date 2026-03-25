@@ -9,7 +9,7 @@ async function main() {
     baseUrl: 'https://openapi.dnse.com.vn',
   });
 
-  const { status, body } = await client.getDeals('0001000115', 'DERIVATIVE', {
+  const { status, body } = await client.getPositions('0001000115', 'DERIVATIVE', {
     dryRun: false,
   });
   console.log(status, body);

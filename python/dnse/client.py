@@ -50,10 +50,10 @@ class DNSEClient:
             dry_run=dry_run,
         )
 
-    def get_deals(self, account_no, market_type, dry_run=False):
+    def get_positions(self, account_no, market_type, dry_run=False):
         return self._request(
             "GET",
-            f"/accounts/{account_no}/deals",
+            f"/accounts/{account_no}/positions",
             query={"marketType": market_type},
             dry_run=dry_run,
         )

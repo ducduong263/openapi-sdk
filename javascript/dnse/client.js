@@ -28,8 +28,8 @@ class DNSEClient {
     return this.#request('GET', `/accounts/${accountNo}/loan-packages`, { query, dryRun });
   }
 
-  closeDeal(accountNo, dealId, marketType, payload, tradingToken, { dryRun = false } = {}) {
-    return this.#request('POST', `/accounts/${accountNo}/deals/${dealId}/close`, {
+  closePosition(accountNo, positionId, marketType, payload, tradingToken, { dryRun = false } = {}) {
+    return this.#request('POST', `/accounts/${accountNo}/positions/${positionId}/close`, {
       query: { marketType },
       body: payload,
       headers: { 'trading-token': tradingToken },
@@ -37,8 +37,8 @@ class DNSEClient {
     });
   }
 
-  getDeals(accountNo, marketType, { dryRun = false } = {}) {
-    return this.#request('GET', `/accounts/${accountNo}/deals`, {
+  getPositions(accountNo, marketType, { dryRun = false } = {}) {
+    return this.#request('GET', `/accounts/${accountNo}/positions`, {
       query: { marketType },
       dryRun,
     });
