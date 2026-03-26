@@ -95,7 +95,7 @@ class DNSEClient {
   }
 
   getSecurityDefinition(symbol, { boardId, dryRun = false } = {}) {
-    return this.#request('GET', `/price/secdef/${symbol}`, {
+    return this.#request('GET', `/price/${symbol}/secdef`, {
       query: { boardId },
       dryRun,
     });

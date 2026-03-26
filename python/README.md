@@ -1,19 +1,48 @@
-# DNSE Python SDK
+# DNSE OpenAPI Python SDK
 
-This SDK provides a simple client for calling the DNSE APIs with HMAC signatures.
+Official Python SDK for integrating with DNSE OpenAPI.
 
-## Requirements
+## Table of Contents
+
+- [Overview](#overview)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Dry Run](#dry-run)
+- [Examples](#examples)
+
+### Overview
+
+DNSE OpenAPI is an API-first trading platform that enables developers to integrate brokerage, trading, margin, and market data services
+into their own applications.
+
+The DNSE Python SDK provides a lightweight client for securely interacting with DNSE OpenAPI REST endpoints. It handles request
+signing, authentication, and communication details, allowing developers to focus on building trading systems, automation strategies,
+and investment applications.
+
+### Installation
+
+#### Requirements
 
 - Python 3.8+
 
-## Usage
+#### Install from PyPI
+
+```console
+pip install openapi-sdk 
+```
+
+Upgrade
+
+### Usage
+
+Create a `DNSEClient` instance with your API credentials:
 
 ```python
 from dnse import DNSEClient
 
 client = DNSEClient(
-    api_key="replace-with-api-key",
-    api_secret="replace-with-api-secret",
+    api_key="your_api_key",
+    api_secret="your_api_secret",
     base_url="https://openapi.dnse.com.vn",
 )
 
@@ -21,33 +50,67 @@ status, body = client.get_accounts(dry_run=False)
 print(status, body)
 ```
 
-## Dry run
+### Dry Run
 
-Set `dry_run=True` on any API call to print the request and skip the network call.
+Set `dry_run=True` to preview the request without sending it to DNSE servers. No network call will be executed.
 
-## Examples
+```python
+client.get_accounts(dry_run=True)
+```
+
+### Examples
 
 Run any example from the `sdk/python/examples` directory:
 
-```bash
+```
 python sdk/python/api/get_accounts.py
 ```
 
-Available examples:
+#### Trading API
 
-- cancel_order.py
-- close_position.py
-- create_trading_token.py
-- get_accounts.py
-- get_balances.py
-- get_positions.py
-- get_loan_packages.py
-- get_ohlc.py
-- get_order_detail.py
-- get_order_history.py
-- get_orders.py
-- get_ppse.py
-- get_security_definition.py
-- post_order.py
-- put_order.py
-- send_email_otp.py
+- `get_accounts.py`
+    - Demonstrates how to retrieve all trading sub-accounts managed under the account corresponding to the API Key.
+- `get_balances.py`
+    - Demonstrates how to retrieve asset balances of a trading sub-account.
+- `get_loan_packages.py`
+    - Demonstrates how to retrieve available loan package codes. It's neccessary for placing an order
+- `get_ppse.py`
+    - Demonstrates how to retrieve buying power and selling power before placing an order.
+- `get_orders.py`
+    - Demonstrates how to retrieve intraday order book.
+- `get_order_detail.py`
+    - Demonstrates how to retrieve detailed information of a specific order (by ID).
+- `get_deals.py`
+    - Demonstrates how to retrieve current holding positions.
+- `get_order_history.py`
+    - Demonstrates how to retrieve historical orders.
+- `send_email_otp.py`
+    - Demonstrates how to request an OTP sent to your registered email. The OTP is required for exchange trading token.
+- `create_trading_token.py`
+    - Demonstrates how to generate a Trading Token required for order placement.
+- `post_order.py`
+    - Demonstrates how to submit a new trading order.
+- `cancel_order.py`
+    - Demonstrates how to cancel an existing order.
+- `replace_order.py`
+    - Demonstrates how to modify an existing order.
+
+#### Market Data API
+
+- `sec_def.py`
+    - Demonstrates how to receive securities definition updates.
+
+### WebSocket Market Data
+
+- `quote.py`
+    - Demonstrates how to receive real-time information on the best bid and ask prices for securities
+- `trade.py`
+    - Demonstrates how to receive real-time order matching (tick) data.
+- `trade_extra.py`
+    - Demonstrates how to receive real-time order matching (tick) data and some information automatically compiled by DNSE (active
+      buy/sell, average matching price)
+- `ohlc.py`
+    - Demonstrates how to receive OHLC data.
+- `expected_price.py`
+    - Demonstrates how to receive expected price information, which is distributed in ATO and ATC sessions
+- `sec_def.py`

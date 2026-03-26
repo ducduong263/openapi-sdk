@@ -133,7 +133,7 @@ class DNSEClient:
             query["boardId"] = board_id
         return self._request(
             "GET",
-            f"/price/secdef/{symbol}",
+            f"/price/{symbol}/secdef",
             query=query if query else None,
             dry_run=dry_run,
         )
