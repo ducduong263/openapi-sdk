@@ -80,6 +80,8 @@ python sdk/python/api/get_accounts.py
     - Demonstrates how to retrieve intraday order book.
 - `get_order_detail.py`
     - Demonstrates how to retrieve detailed information of a specific order (by ID).
+- `get_execution_detail.py`
+    - Demonstrates how to retrieve derivative execution details and reports for a specific order (by ID).
 - `get_positions.py`
     - Demonstrates how to retrieve current holding positions.
 - `get_positions_by_id.py`

@@ -88,6 +88,17 @@ class DNSEClient:
             dry_run=dry_run,
         )
 
+    def get_execution_detail(self, account_no, order_id, market_type, order_category="NORMAL", dry_run=False):
+        query = {"marketType": market_type}
+        if order_category:
+            query["orderCategory"] = order_category
+        return self._request(
+            "GET",
+            f"/accounts/{account_no}/executions/{order_id}",
+            query=query,
+            dry_run=dry_run,
+        )
+
     def get_order_history(
             self,
             account_no,

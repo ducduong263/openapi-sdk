@@ -45,6 +45,7 @@ Available examples:
 - create_trading_token.js
 - get_accounts.js
 - get_balances.js
+- get_execution_detail.js
 - get_positions.js
 - get_loan_packages.js
 - get_ohlc.js

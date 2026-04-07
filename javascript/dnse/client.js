@@ -58,6 +58,13 @@ class DNSEClient {
     });
   }
 
+  getExecutionDetail(accountNo, orderId, marketType, { orderCategory = 'NORMAL', dryRun = false } = {}) {
+    return this.#request('GET', `/accounts/${accountNo}/executions/${orderId}`, {
+      query: { marketType, orderCategory },
+      dryRun,
+    });
+  }
+
   getOrderHistory(
     accountNo,
     marketType,
