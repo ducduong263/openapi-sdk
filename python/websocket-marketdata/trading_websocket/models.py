@@ -36,6 +36,28 @@ def parse_timestamp(v: Any, date_only: bool = False) -> Optional[str]:
     except Exception:
         return None
 
+def parse_timestamp_float(v: Any) -> Optional[float]:
+    if v is None:
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    if isinstance(v, str):
+        try:
+            return datetime.fromisoformat(v.replace('Z', '+00:00')).timestamp()
+        except ValueError:
+            pass
+    if isinstance(v, dict):
+        try:
+            seconds = v.get("Seconds", v.get("seconds", 0))
+            nanos = v.get("Nanos", v.get("nanos", 0))
+            return float(seconds) + float(nanos) * 1e-9
+        except (TypeError, ValueError):
+            return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
 
 @dataclass
 class PriceLevel:
@@ -93,7 +115,7 @@ class TradeExtra:
     symbol: str
     price: float
     quantity: int
-    side: int
+    side: int #why int? old output = 1 or 2 - new output = SELL or BUY ?
     avgPrice: float
     totalVolumeTraded: int
     grossTradeAmount: float
@@ -101,25 +123,30 @@ class TradeExtra:
     lowestPrice: float
     openPrice: float
     tradingSessionId: int
+    sendingTime: Optional[float] = field(default=None)
+    multicastReceiveTime: Optional[float] = field(default=None)
     receivedAt: Optional[float] = field(default=None, repr=False)
+    
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "TradeExtra":
         return cls(
-            marketId=data.get("marketId"),
-            boardId=data.get("boardId"),
-            isin=data.get("isin"),
-            symbol=data.get("symbol"),
-            price=data.get("matchPrice"),
-            quantity=data.get("matchQtty"),
-            side=data.get("side"),
-            avgPrice=data.get("avgPrice"),
-            totalVolumeTraded=data.get("totalVolumeTraded"),
-            grossTradeAmount=data.get("grossTradeAmount"),
-            highestPrice=data.get("highestPrice"),
-            lowestPrice=data.get("lowestPrice"),
-            openPrice=data.get("openPrice"),
-            tradingSessionId=data.get("tradingSessionId"),
+            marketId=data.get("marketId")or data.get("market_id") or data.get("MarketId", 0),
+            boardId=data.get("boardId")or data.get("board_id") or data.get("BoardId", 0),
+            isin=data.get("isin") or data.get("Isin", ""),
+            symbol=data.get("symbol") or data.get("Symbol"),
+            price=data.get("matchPrice") or data.get("MatchPrice") or data.get("match_price", 0.0),
+            quantity=data.get("matchQtty") or data.get("MatchQtty") or data.get("match_qtty", 0),
+            side=data.get("side") or data.get("Side", 0),
+            avgPrice=data.get("avgPrice") or data.get("AvgPrice") or data.get("avg_price", 0.0),
+            totalVolumeTraded=data.get("totalVolumeTraded") or data.get("TotalVolumeTraded") or data.get("total_volume_traded", 0),
+            grossTradeAmount=data.get("grossTradeAmount") or data.get("GrossTradeAmount") or data.get("gross_trade_amount", 0.0),
+            highestPrice=data.get("highestPrice") or data.get("HighestPrice") or data.get("highest_price", 0.0),
+            lowestPrice=data.get("lowestPrice") or data.get("LowestPrice") or data.get("lowest_price", 0.0),
+            openPrice=data.get("openPrice") or data.get("OpenPrice") or data.get("open_price", 0.0),
+            tradingSessionId=data.get("tradingSessionId") or data.get("TradingSessionId") or data.get("trading_session_id", 0),
+            sendingTime=parse_timestamp_float(data.get("sendingTime") or data.get("SendingTime") or data.get("sending_time")),
+            multicastReceiveTime=parse_timestamp_float(data.get("multicastReceiveTime") or data.get("MulticastReceiveTime") or data.get("multicast_receive_time")),
             receivedAt=data.get("_receivedAt"),
         )
 
