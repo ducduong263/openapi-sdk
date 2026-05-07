@@ -347,6 +347,8 @@ class Quote:
     offer: List[PriceLevel]
     totalOfferQtty: float
     totalBidQtty: float
+    sendingTime: Optional[float] = field(default=None, repr=False)
+    multicastReceiveTime: Optional[float] = field(default=None, repr=False)
     receivedAt: Optional[float] = field(default=None, repr=False)
 
     @classmethod
@@ -368,6 +370,8 @@ class Quote:
             offer=offers,
             totalOfferQtty=data.get("totalOfferQtty"),
             totalBidQtty=data.get("totalBidQtty"),
+            sendingTime=parse_timestamp_float(data.get("sendingTime")),
+            multicastReceiveTime=parse_timestamp_float(data.get("multicastReceiveTime")),
             receivedAt=data.get("_receivedAt"),
         )
 
