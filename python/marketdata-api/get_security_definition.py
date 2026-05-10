@@ -2,15 +2,18 @@
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from dnse import DNSEClient
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".env"))
 
 
 def main():
     client = DNSEClient(
-        api_key="replace-with-api-key",
-        api_secret="replace-with-api-secret",
+        api_key=os.getenv("DNSE_API_KEY"),
+        api_secret=os.getenv("DNSE_API_SECRET"),
         base_url="https://openapi.dnse.com.vn",
     )
 
