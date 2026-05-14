@@ -116,11 +116,16 @@ class Trade:
     lowestPrice: float
     openPrice: float
     tradingSessionId: int
-    time: Optional[str] = None
-    receivedAt: Optional[float] = field(default=None, repr=False)
+    time: Optional[float] = None              # exchange send time (epoch seconds)
+    multicastReceiveTime: Optional[float] = field(default=None, repr=False)  # DNSE gateway receive time
+    receivedAt: Optional[float] = field(default=None, repr=False)            # local receive time
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Trade":
+    def from_dict(cls, data: dict) -> "Trade":
+        _time = parse_timestamp_float(
+            data.get("time") or data.get("Time")
+            or data.get("sendingTime") or data.get("SendingTime") or data.get("sending_time")
+        )
         return cls(
             marketId=data.get("marketId"),
             boardId=data.get("boardId"),
@@ -134,7 +139,10 @@ class Trade:
             lowestPrice=data.get("lowestPrice"),
             openPrice=data.get("openPrice"),
             tradingSessionId=data.get("tradingSessionId"),
-            time=parse_timestamp(data.get("time")),
+            time=_time,
+            multicastReceiveTime=parse_timestamp_float(
+                data.get("multicastReceiveTime") or data.get("MulticastReceiveTime") or data.get("multicast_receive_time")
+            ),
             receivedAt=data.get("_receivedAt"),
         )
 
@@ -155,11 +163,16 @@ class TradeExtra:
     lowestPrice: float
     openPrice: float
     tradingSessionId: int
-    time: Optional[str] = None
-    receivedAt: Optional[float] = field(default=None, repr=False)
+    time: Optional[float] = None              # exchange send time (epoch seconds)
+    multicastReceiveTime: Optional[float] = field(default=None, repr=False)  # DNSE gateway receive time
+    receivedAt: Optional[float] = field(default=None, repr=False)            # local receive time
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "TradeExtra":
+        _time = parse_timestamp_float(
+            data.get("time") or data.get("Time")
+            or data.get("sendingTime") or data.get("SendingTime") or data.get("sending_time")
+        )
         return cls(
             marketId=data.get("marketId"),
             boardId=data.get("boardId"),
@@ -175,7 +188,10 @@ class TradeExtra:
             lowestPrice=data.get("lowestPrice"),
             openPrice=data.get("openPrice"),
             tradingSessionId=data.get("tradingSessionId"),
-            time=parse_timestamp(data.get("time")),
+            time=_time,
+            multicastReceiveTime=parse_timestamp_float(
+                data.get("multicastReceiveTime") or data.get("MulticastReceiveTime") or data.get("multicast_receive_time")
+            ),
             receivedAt=data.get("_receivedAt"),
         )
 
@@ -186,7 +202,6 @@ class ForeignInvestor:
     boardId: str
     tradingSessionId: str
     symbol: str
-    transactTime: str
     foreignInvestorTypeCode: str
 
     sellVolume: int
@@ -201,6 +216,7 @@ class ForeignInvestor:
 
     foreignerOrderLimitQuantity: int
     foreignerBuyPossibleQuantity: int
+    transactTime: Optional[float] = None     # epoch seconds
     receivedAt: Optional[float] = field(default=None, repr=False)
 
     @classmethod
@@ -210,7 +226,9 @@ class ForeignInvestor:
             boardId=data.get("boardId"),
             tradingSessionId=data.get("tradingSessionId"),
             symbol=data.get("symbol"),
-            transactTime=data.get("transactTime"),
+            transactTime=parse_timestamp_float(
+                data.get("transactTime") or data.get("TransactTime") or data.get("transact_time")
+            ),
             foreignInvestorTypeCode=data.get("foreignInvestorTypeCode"),
             sellVolume=data.get("sellVolume"),
             sellTradedAmount=data.get("sellTradedAmount"),
@@ -295,9 +313,13 @@ class MarketIndex:
             marketIndexClass=data.get("marketIndexClass"),
             marketId=data.get("marketId"),
             tradingSessionId=data.get("tradingSessionId"),
-            transactTime=parse_timestamp_float(data.get("transactTime")),
+            transactTime=parse_timestamp_float(
+                data.get("transactTime") or data.get("TransactTime") or data.get("transact_time")
+            ),
             receivedAt=data.get("_receivedAt"),
-            multicastReceiveTime=parse_timestamp_float(data.get("multicastReceiveTime")),
+            multicastReceiveTime=parse_timestamp_float(
+                data.get("multicastReceiveTime") or data.get("MulticastReceiveTime") or data.get("multicast_receive_time")
+            ),
         )
 
 
@@ -310,7 +332,7 @@ class ExpectedPrice:
     closePrice: float
     expectedTradePrice: float
     expectedTradeQuantity: int
-    time: Optional[str] = None
+    time: Optional[float] = None              # epoch seconds
     receivedAt: Optional[float] = field(default=None, repr=False)
 
     @classmethod
@@ -323,7 +345,9 @@ class ExpectedPrice:
             closePrice=data.get("closePrice"),
             expectedTradePrice=data.get("expectedTradePrice"),
             expectedTradeQuantity=data.get("expectedTradeQuantity"),
-            time=parse_timestamp(data.get("time")),
+            time=parse_timestamp_float(
+                data.get("time") or data.get("Time")
+            ),
             receivedAt=data.get("_receivedAt"),
         )
 
@@ -488,8 +512,9 @@ class Quote:
     offer: List[PriceLevel]
     totalOfferQtty: float
     totalBidQtty: float
-    time: Optional[str] = None
-    receivedAt: Optional[float] = field(default=None, repr=False)
+    time: Optional[float] = None              # exchange send time (epoch seconds)
+    multicastReceiveTime: Optional[float] = field(default=None, repr=False)  # DNSE gateway receive time
+    receivedAt: Optional[float] = field(default=None, repr=False)            # local receive time
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Quote":
@@ -501,6 +526,10 @@ class Quote:
         offer_data = data.get("offer") or []
         offers = [PriceLevel.from_dict(level) for level in offer_data]
 
+        _time = parse_timestamp_float(
+            data.get("time") or data.get("Time")
+            or data.get("sendingTime") or data.get("SendingTime") or data.get("sending_time")
+        )
         return cls(
             symbol=data.get("symbol"),
             marketId=data.get("marketId"),
@@ -510,7 +539,10 @@ class Quote:
             offer=offers,
             totalOfferQtty=data.get("totalOfferQtty"),
             totalBidQtty=data.get("totalBidQtty"),
-            time=parse_timestamp(data.get("time")),
+            time=_time,
+            multicastReceiveTime=parse_timestamp_float(
+                data.get("multicastReceiveTime") or data.get("MulticastReceiveTime") or data.get("multicast_receive_time")
+            ),
             receivedAt=data.get("_receivedAt"),
         )
 
