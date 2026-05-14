@@ -43,8 +43,16 @@ def parse_timestamp_float(v: Any) -> Optional[float]:
         return float(v)
     if isinstance(v, str):
         try:
-            return datetime.fromisoformat(v.replace('Z', '+00:00')).timestamp()
-        except ValueError:
+            # Truncate fractional seconds to microseconds (6 digits) before parsing
+            # Handles nanosecond precision: '2026-05-12T02:31:35.383026543Z' -> '2026-05-12T02:31:35.383026Z'
+            s = v
+            if '.' in s:
+                dot_idx = s.index('.')
+                end_idx = dot_idx + 7  # dot + 6 digits
+                suffix = s[end_idx:].lstrip('0123456789')  # 'Z' or '+00:00'
+                s = s[:end_idx] + suffix
+            return datetime.fromisoformat(s.replace('Z', '+00:00')).timestamp()
+        except (ValueError, AttributeError):
             pass
     if isinstance(v, dict):
         try:
@@ -231,9 +239,10 @@ class MarketIndex:
     marketIndexClass: int
     marketId: int
     tradingSessionId: int
-    transactTime: str
+    transactTime: Optional[float] = field(default=None)
 
     receivedAt: Optional[float] = field(default=None, repr=False)
+    multicastReceiveTime: Optional[float] = field(default=None, repr=False)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "MarketIndex":
@@ -264,8 +273,9 @@ class MarketIndex:
             marketIndexClass=data.get("marketIndexClass"),
             marketId=data.get("marketId"),
             tradingSessionId=data.get("tradingSessionId"),
-            transactTime=parse_timestamp(data.get("transactTime")),
+            transactTime=parse_timestamp_float(data.get("transactTime")),
             receivedAt=data.get("_receivedAt"),
+            multicastReceiveTime=parse_timestamp_float(data.get("multicastReceiveTime")),
         )
 
 

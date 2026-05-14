@@ -34,7 +34,7 @@ async def main():
 
     symbols = ["FPT", "VIC", "SSI", "HPG", "MWG"]
     print(f"Subscribing to quotes for {symbols}...")
-    await client.subscribe_quotes(symbols, on_quote=handle_quote, encoding=encoding, board_id="G1")
+    await client.subscribe_quotes(symbols, on_quote=handle_quote, encoding=encoding, board_id="")
 
     print("\nReceiving market data...\n")
 

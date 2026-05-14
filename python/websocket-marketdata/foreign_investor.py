@@ -10,14 +10,18 @@ from datetime import datetime
 
 from trading_websocket import TradingClient
 from trading_websocket.models import ForeignInvestor
+from dotenv import load_dotenv
+import os
 
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".env"))
 
 async def main():
     # Initialize client
-    encoding = "json"  # json or msgpack
+    encoding = "msgpack"  # json or msgpack
     client = TradingClient(
-        api_key="api-key",
-        api_secret="api-secret",
+        api_key=os.getenv("DNSE_API_KEY"),
+        api_secret=os.getenv("DNSE_API_SECRET"),
         base_url="wss://ws-openapi.dnse.com.vn",
         encoding=encoding,
     )
@@ -32,7 +36,7 @@ async def main():
     print(f"Connected! Session ID: {client._session_id}\n")
 
     print("Subscribing to foreigner trading...")
-    await client.subscribe_foreign_trading(["HPG", "FPT"], board_id="G1", on_trade=handle_foreign_trading,
+    await client.subscribe_foreign_trading(["HPG", "FPT", "ACB"], board_id="G1", on_trade=handle_foreign_trading,
                                            encoding=encoding)
 
     print("\nReceiving foreigner trading data (will run for 8 hour)...\n")

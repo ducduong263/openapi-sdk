@@ -12,14 +12,18 @@ import asyncio
 from trading_websocket import TradingClient
 from trading_websocket.models import MarketIndex
 from datetime import datetime
+from dotenv import load_dotenv
+import os
 
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".env"))
 
 async def main():
     # Initialize client
     encoding = "msgpack"  # json or msgpack
     client = TradingClient(
-        api_key="api-key",
-        api_secret="api-secret",
+        api_key=os.getenv("DNSE_API_KEY"),
+        api_secret=os.getenv("DNSE_API_SECRET"),
         base_url="wss://ws-openapi.dnse.com.vn",
         encoding=encoding,
     )
@@ -34,7 +38,7 @@ async def main():
     print(f"Connected! Session ID: {client._session_id}\n")
 
     print("Subscribing to market index...")
-    await client.subscribe_market_index(market_index='HNX', on_market_index=handle_market_index, encoding=encoding)
+    await client.subscribe_market_index(market_index="VNINDEX", on_market_index=handle_market_index, encoding=encoding)
 
     print("\nReceiving market index (will run for 1 hour)...\n")
 
