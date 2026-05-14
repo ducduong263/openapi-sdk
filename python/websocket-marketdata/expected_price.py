@@ -10,20 +10,16 @@ This example shows how to receive real-time market data for multiple symbols.
 import asyncio
 from datetime import datetime
 
-from trading_websocket import TradingClient
-from trading_websocket.models import ExpectedPrice
-from dotenv import load_dotenv
-import os
+from dnse import TradingClient
+from dnse.websocket.models import ExpectedPrice
 
-
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".env"))
 
 async def main():
     # Initialize client
     encoding = "msgpack"  # json or msgpack
     client = TradingClient(
-        api_key=os.getenv("DNSE_API_KEY"),
-        api_secret=os.getenv("DNSE_API_SECRET"),
+        api_key="api-key",
+        api_secret="api-secret",
         base_url="wss://ws-openapi.dnse.com.vn",
         encoding=encoding,
     )

@@ -14,35 +14,64 @@ from typing import Optional, List, Dict, Any, Tuple
 
 
 def parse_timestamp(v: Any, date_only: bool = False) -> Optional[str]:
-    """Parse various timestamp formats into string.
+    """Parse various timestamp formats into string with milliseconds.
 
     Supports:
     - protobuf: {'Seconds': 1501718400, 'Nanos': 0}
     - ISO string: '2017-08-03T00:00:00Z'
     - Unix int/float: 1501718400
+
+    Returns:
+        Timestamp string with format "YYYY-MM-DD HH:MM:SS.mmm" or None
     """
     try:
         if v is None:
             return None
-        fmt = "%Y-%m-%d" if date_only else "%Y-%m-%d %H:%M:%S"
+
         if isinstance(v, str):
-            return datetime.fromisoformat(v.replace("Z", "+00:00")).strftime(fmt)
+            dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+            if date_only:
+                return dt.strftime("%Y-%m-%d")
+            return dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]  # Cut to milliseconds
+
         if isinstance(v, dict):
             seconds = v.get("Seconds", v.get("seconds", 0))
             nanos = v.get("Nanos", v.get("nanos", 0))
-            return datetime.fromtimestamp(seconds + nanos / 1e9).strftime(fmt)
+            dt = datetime.fromtimestamp(seconds + nanos / 1e9)
+            if date_only:
+                return dt.strftime("%Y-%m-%d")
+            return dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]  # Cut to milliseconds
+
         if isinstance(v, (int, float)):
-            return datetime.fromtimestamp(v).strftime(fmt)
+            # If already in milliseconds (>1e12), convert to seconds
+            if v > 1e12:
+                dt = datetime.fromtimestamp(v / 1000)
+            else:
+                dt = datetime.fromtimestamp(v)
+            if date_only:
+                return dt.strftime("%Y-%m-%d")
+            return dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]  # Cut to milliseconds
     except Exception:
         return None
 
+
 def parse_timestamp_float(v: Any) -> Optional[float]:
-    if v is None:
-        return None
-    if isinstance(v, (int, float)):
-        return float(v)
-    if isinstance(v, str):
-        try:
+    """Parse various timestamp formats into float (Unix epoch seconds).
+
+    Supports:
+    - protobuf: {'Seconds': 1501718400, 'Nanos': 0} or {'seconds': ..., 'nanos': ...}
+    - ISO string: '2026-05-14T07:45:23.383026543Z' (handles nanosecond precision)
+    - Unix int/float: 1501718400 or 1501718400.123
+
+    Returns:
+        float epoch seconds, or None on failure
+    """
+    try:
+        if v is None:
+            return None
+        if isinstance(v, (int, float)):
+            return float(v)
+        if isinstance(v, str):
             # Truncate fractional seconds to microseconds (6 digits) before parsing
             # Handles nanosecond precision: '2026-05-12T02:31:35.383026543Z' -> '2026-05-12T02:31:35.383026Z'
             s = v
@@ -52,18 +81,11 @@ def parse_timestamp_float(v: Any) -> Optional[float]:
                 suffix = s[end_idx:].lstrip('0123456789')  # 'Z' or '+00:00'
                 s = s[:end_idx] + suffix
             return datetime.fromisoformat(s.replace('Z', '+00:00')).timestamp()
-        except (ValueError, AttributeError):
-            pass
-    if isinstance(v, dict):
-        try:
-            seconds = v.get("Seconds", v.get("seconds", 0))
-            nanos = v.get("Nanos", v.get("nanos", 0))
+        if isinstance(v, dict):
+            seconds = v.get('Seconds', v.get('seconds', 0))
+            nanos = v.get('Nanos', v.get('nanos', 0))
             return float(seconds) + float(nanos) * 1e-9
-        except (TypeError, ValueError):
-            return None
-    try:
-        return float(v)
-    except (TypeError, ValueError):
+    except Exception:
         return None
 
 
@@ -94,6 +116,7 @@ class Trade:
     lowestPrice: float
     openPrice: float
     tradingSessionId: int
+    time: Optional[str] = None
     receivedAt: Optional[float] = field(default=None, repr=False)
 
     @classmethod
@@ -111,6 +134,7 @@ class Trade:
             lowestPrice=data.get("lowestPrice"),
             openPrice=data.get("openPrice"),
             tradingSessionId=data.get("tradingSessionId"),
+            time=parse_timestamp(data.get("time")),
             receivedAt=data.get("_receivedAt"),
         )
 
@@ -123,7 +147,7 @@ class TradeExtra:
     symbol: str
     price: float
     quantity: int
-    side: int #why int? old output = 1 or 2 - new output = SELL or BUY ?
+    side: int
     avgPrice: float
     totalVolumeTraded: int
     grossTradeAmount: float
@@ -131,32 +155,30 @@ class TradeExtra:
     lowestPrice: float
     openPrice: float
     tradingSessionId: int
-    sendingTime: Optional[float] = field(default=None)
-    multicastReceiveTime: Optional[float] = field(default=None)
+    time: Optional[str] = None
     receivedAt: Optional[float] = field(default=None, repr=False)
-    
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "TradeExtra":
         return cls(
-            marketId=data.get("marketId")or data.get("market_id") or data.get("MarketId", 0),
-            boardId=data.get("boardId")or data.get("board_id") or data.get("BoardId", 0),
-            isin=data.get("isin") or data.get("Isin", ""),
-            symbol=data.get("symbol") or data.get("Symbol"),
-            price=data.get("matchPrice") or data.get("MatchPrice") or data.get("match_price", 0.0),
-            quantity=data.get("matchQtty") or data.get("MatchQtty") or data.get("match_qtty", 0),
-            side=data.get("side") or data.get("Side", 0),
-            avgPrice=data.get("avgPrice") or data.get("AvgPrice") or data.get("avg_price", 0.0),
-            totalVolumeTraded=data.get("totalVolumeTraded") or data.get("TotalVolumeTraded") or data.get("total_volume_traded", 0),
-            grossTradeAmount=data.get("grossTradeAmount") or data.get("GrossTradeAmount") or data.get("gross_trade_amount", 0.0),
-            highestPrice=data.get("highestPrice") or data.get("HighestPrice") or data.get("highest_price", 0.0),
-            lowestPrice=data.get("lowestPrice") or data.get("LowestPrice") or data.get("lowest_price", 0.0),
-            openPrice=data.get("openPrice") or data.get("OpenPrice") or data.get("open_price", 0.0),
-            tradingSessionId=data.get("tradingSessionId") or data.get("TradingSessionId") or data.get("trading_session_id", 0),
-            sendingTime=parse_timestamp_float(data.get("sendingTime") or data.get("SendingTime") or data.get("sending_time")),
-            multicastReceiveTime=parse_timestamp_float(data.get("multicastReceiveTime") or data.get("MulticastReceiveTime") or data.get("multicast_receive_time")),
+            marketId=data.get("marketId"),
+            boardId=data.get("boardId"),
+            isin=data.get("isin"),
+            symbol=data.get("symbol"),
+            price=data.get("matchPrice"),
+            quantity=data.get("matchQtty"),
+            side=data.get("side"),
+            avgPrice=data.get("avgPrice"),
+            totalVolumeTraded=data.get("totalVolumeTraded"),
+            grossTradeAmount=data.get("grossTradeAmount"),
+            highestPrice=data.get("highestPrice"),
+            lowestPrice=data.get("lowestPrice"),
+            openPrice=data.get("openPrice"),
+            tradingSessionId=data.get("tradingSessionId"),
+            time=parse_timestamp(data.get("time")),
             receivedAt=data.get("_receivedAt"),
         )
+
 
 @dataclass
 class ForeignInvestor:
@@ -239,7 +261,7 @@ class MarketIndex:
     marketIndexClass: int
     marketId: int
     tradingSessionId: int
-    transactTime: Optional[float] = field(default=None)
+    transactTime: Optional[float] = None
 
     receivedAt: Optional[float] = field(default=None, repr=False)
     multicastReceiveTime: Optional[float] = field(default=None, repr=False)
@@ -288,6 +310,7 @@ class ExpectedPrice:
     closePrice: float
     expectedTradePrice: float
     expectedTradeQuantity: int
+    time: Optional[str] = None
     receivedAt: Optional[float] = field(default=None, repr=False)
 
     @classmethod
@@ -300,6 +323,7 @@ class ExpectedPrice:
             closePrice=data.get("closePrice"),
             expectedTradePrice=data.get("expectedTradePrice"),
             expectedTradeQuantity=data.get("expectedTradeQuantity"),
+            time=parse_timestamp(data.get("time")),
             receivedAt=data.get("_receivedAt"),
         )
 
@@ -322,6 +346,7 @@ class SecurityDefinition:
     symbolTradingSanctionStatusCode: str
     finalTradeDate: Optional[str]
     listingDate: Optional[str]
+    time: Optional[str] = None
     receivedAt: Optional[float] = field(default=None, repr=False)
 
     @classmethod
@@ -343,6 +368,7 @@ class SecurityDefinition:
             symbolTradingSanctionStatusCode=data.get("symbolTradingSanctionStatusCode"),
             finalTradeDate=parse_timestamp(data.get("finalTradeDate"), date_only=True),
             listingDate=parse_timestamp(data.get("listingDate"), date_only=True),
+            time=parse_timestamp(data.get("time")),
             receivedAt=data.get("_receivedAt"),
         )
 
@@ -405,6 +431,54 @@ class Order:
 
 
 @dataclass
+class Position:
+    id: int
+    accountNo: str
+    symbol: str
+    status: str
+    loanPackageId: int
+    side: str
+    accumulateQuantity: int
+    tradeQuantity: int
+    closedQuantity: int
+    costPrice: float
+    marketPrice: float
+    breakEvenPrice: float
+    openQuantity: int
+    overNightQuantity: int
+    averageClosePrice: float
+    marketType: str
+    createdDate: str
+    modifiedDate: str
+
+    receivedAt: Optional[float] = field(default=None, repr=False)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Position":
+        return cls(
+            id=data.get("id"),
+            accountNo=data.get("accountNo"),
+            symbol=data.get("symbol"),
+            status=data.get("status"),
+            loanPackageId=data.get("loanPackageId"),
+            side=data.get("side"),
+            accumulateQuantity=data.get("accumulateQuantity"),
+            tradeQuantity=data.get("tradeQuantity"),
+            closedQuantity=data.get("closedQuantity"),
+            costPrice=float(data.get("costPrice")),
+            marketPrice=float(data.get("marketPrice")),
+            breakEvenPrice=float(data.get("breakEvenPrice")),
+            openQuantity=data.get("openQuantity"),
+            overNightQuantity=data.get("overNightQuantity"),
+            averageClosePrice=float(data.get("averageClosePrice")),
+            marketType=data.get("marketType"),
+            createdDate=data.get("createdDate"),
+            modifiedDate=data.get("modifiedDate"),
+            receivedAt=data.get("_receivedAt"),
+        )
+
+
+@dataclass
 class Quote:
     marketId: str
     boardId: str
@@ -414,8 +488,7 @@ class Quote:
     offer: List[PriceLevel]
     totalOfferQtty: float
     totalBidQtty: float
-    sendingTime: Optional[float] = field(default=None, repr=False)
-    multicastReceiveTime: Optional[float] = field(default=None, repr=False)
+    time: Optional[str] = None
     receivedAt: Optional[float] = field(default=None, repr=False)
 
     @classmethod
@@ -437,8 +510,7 @@ class Quote:
             offer=offers,
             totalOfferQtty=data.get("totalOfferQtty"),
             totalBidQtty=data.get("totalBidQtty"),
-            sendingTime=parse_timestamp_float(data.get("sendingTime")),
-            multicastReceiveTime=parse_timestamp_float(data.get("multicastReceiveTime")),
+            time=parse_timestamp(data.get("time")),
             receivedAt=data.get("_receivedAt"),
         )
 
@@ -497,42 +569,6 @@ class Ohlc:
             type=data.get("type"),
             lastUpdated=data.get("lastUpdated"),
             receivedAt=data.get("_receivedAt"),
-        )
-
-
-@dataclass
-class Position:
-    symbol: str
-    quantity: int
-    averagePrice: Decimal
-    marketValue: Decimal
-    costBasis: Decimal
-    unrealizedPl: Decimal
-    unrealizedPlPercent: Decimal
-    timestamp: datetime
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Position":
-        """Parse position from message data.
-
-        Args:
-            data: Raw message dict with either abbreviated or full field names
-
-        Returns:
-            Position instance
-
-        Example:
-            >>> Position.from_dict({"S": "AAPL", "q": 100, "ap": "150.00", ...})
-        """
-        return cls(
-            symbol=data.get("symbol"),
-            quantity=data.get("quantity"),
-            averagePrice=Decimal(str(data.get("averagePrice"))),
-            marketValue=Decimal(str(data.get("marketValue"))),
-            costBasis=Decimal(str(data.get("costBasis"))),
-            unrealizedPl=Decimal(str(data.get("unrealizedPl"))),
-            unrealizedPlPercent=Decimal(str(data.get("unrealizedPlPercent"))),
-            timestamp=datetime.fromtimestamp((data.get("timestamp")) / 1000),
         )
 
 
