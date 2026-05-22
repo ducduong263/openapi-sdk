@@ -72,6 +72,14 @@ def parse_timestamp_float(v: Any) -> Optional[float]:
         if isinstance(v, (int, float)):
             return float(v)
         if isinstance(v, str):
+            # Exchange time-of-day format: 'HHMMSSMMM' (9 all-digits, e.g. '040300027' = 04:03:00.027 UTC)
+            # Used in transactTime of ForeignInvestor and other exchange messages
+            if len(v) == 9 and v.isdigit():
+                from datetime import timezone as _tz, date as _date, time as _time
+                hh, mm, ss, ms = int(v[0:2]), int(v[2:4]), int(v[4:6]), int(v[6:9])
+                today = _date.today()
+                dt = datetime.combine(today, _time(hh, mm, ss, ms * 1000), tzinfo=_tz.utc)
+                return dt.timestamp()
             # Truncate fractional seconds to microseconds (6 digits) before parsing
             # Handles nanosecond precision: '2026-05-12T02:31:35.383026543Z' -> '2026-05-12T02:31:35.383026Z'
             s = v
@@ -525,7 +533,6 @@ class Quote:
         # Parse asks array
         offer_data = data.get("offer") or []
         offers = [PriceLevel.from_dict(level) for level in offer_data]
-
         _time = parse_timestamp_float(
             data.get("time") or data.get("Time")
             or data.get("sendingTime") or data.get("SendingTime") or data.get("sending_time")
